@@ -1,0 +1,58 @@
+services:
+  api:
+    container_name: api-container
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.dev
+    ports:
+      - "${API_PORT}:${API_INTERNAL_PORT}"
+    volumes:
+      - .:/app
+    tty: true
+    stdin_open: true
+    environment:
+      DATABASE_URL: "${DATABASE_URL}"
+    depends_on:
+      - mysql
+
+  mysql:
+    image: mysql:${MYSQL_VERSION}
+    container_name: mysql-container
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "${MYSQL_PORT}:${MYSQL_INTERNAL_PORT}"
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  atlas:
+    image: arigaio/atlas:latest
+    container_name: atlas-container
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+    volumes:
+      - ./migrations:/migrations
+      - ./atlas.hcl:/atlas.hcl
+    depends_on:
+      mysql:
+        condition: service_healthy
+    command:
+      [
+        "migrate",
+        "apply",
+        "--dir",
+        "file://migrations",
+        "--url",
+        "${DATABASE_URL}",
+      ]
+volumes:
+  db_data:
