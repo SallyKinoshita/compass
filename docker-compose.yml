@@ -5,15 +5,24 @@ services:
       context: .
       dockerfile: ./docker/Dockerfile.dev
     ports:
-      - "${API_PORT}:${API_INTERNAL_PORT}"
+      - "${API_EXTERNAL_PORT}:${API_PORT}"
     volumes:
-      - .:/app
+      - ./cmd:/app/cmd
+      - ./internal:/app/internal
+      - ./pkg:/app/pkg
+      - .air.toml:/app/.air.toml
     tty: true
     stdin_open: true
     environment:
-      DATABASE_URL: "${DATABASE_URL}"
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_HOST: ${MYSQL_HOST}
+      MYSQL_PORT: ${MYSQL_PORT}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     depends_on:
-      - mysql
+      mysql:
+        condition: service_healthy
 
   mysql:
     image: mysql:${MYSQL_VERSION}
@@ -25,7 +34,7 @@ services:
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     ports:
-      - "${MYSQL_PORT}:${MYSQL_INTERNAL_PORT}"
+      - "${MYSQL_EXTERNAL_PORT}:${MYSQL_PORT}"
     volumes:
       - db_data:/var/lib/mysql
     healthcheck:
@@ -41,7 +50,6 @@ services:
       - DATABASE_URL=${DATABASE_URL}
     volumes:
       - ./migrations:/migrations
-      - ./atlas.hcl:/atlas.hcl
     depends_on:
       mysql:
         condition: service_healthy
@@ -54,5 +62,6 @@ services:
         "--url",
         "${DATABASE_URL}",
       ]
+
 volumes:
   db_data:
