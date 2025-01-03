@@ -1,0 +1,102 @@
+openapi: 3.0.3
+info:
+  title: 学生管理API
+  description: 学生、教室、および教師を管理するためのAPIです。
+  version: "1.0.0"
+paths:
+  /students:
+    get:
+      summary: 学生情報を取得
+      description: クエリパラメータに基づいて学生のリストを取得します。
+      parameters:
+        - name: facilitator_id
+          in: query
+          required: true
+          description: 担当教師のID
+          schema:
+            type: integer
+        - name: page
+          in: query
+          required: false
+          description: ページ番号（ページネーション用）
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          required: false
+          description: 1ページあたりの取得件数
+          schema:
+            type: integer
+            default: 5
+        - name: sort
+          in: query
+          required: false
+          description: ソートするフィールド
+          schema:
+            type: string
+            enum:
+              - id
+              - name
+              - loginId
+            default: id
+        - name: order
+          in: query
+          required: false
+          description: 並び順（昇順または降順）
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: asc
+        - name: name_like
+          in: query
+          required: false
+          description: 学生名の部分一致検索
+          schema:
+            type: string
+        - name: loginId_like
+          in: query
+          required: false
+          description: ログインIDの部分一致検索
+          schema:
+            type: string
+      responses:
+        "200":
+          description: クエリに一致する学生データの取得に成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  students:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                          description: 学生ID
+                        name:
+                          type: string
+                          description: 学生名
+                        loginId:
+                          type: string
+                          description: 学生のログインID
+                        classroom:
+                          type: object
+                          properties:
+                            id:
+                              type: integer
+                              description: 教室ID
+                            name:
+                              type: string
+                              description: 教室名
+                  totalCount:
+                    type: integer
+                    description: クエリに一致する学生の合計件数
+        "404":
+          description: 該当する学生が見つかりませんでした
+        "400":
+          description: リクエストが無効です（クエリパラメータが不正）
